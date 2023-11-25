@@ -1,0 +1,354 @@
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script>
+    "use strict";
+    let settingsMap = {};
+    const DEFAULT_SETTINGS_OBJ = {
+        ignoreCase: true,
+        headingSettings: {},
+        textSettings: {},
+    };
+
+    $(function () {
+        $("#run").click(countAll);
+        $("#formatTextBtn").click(formatText);
+        $("#formatHeadingsBtn").click(formatHeadings);
+
+        $("#settings-btn").click(function () {
+            if ($("#settings").is(":visible")) {
+                saveSettings();
+            }
+            $("#settings").toggle();
+        });
+        $("#saveSettings").click(function () {
+            $("#settings").hide();
+            saveSettings();
+        });
+        $("#deleteAllSettings").click(function () {
+            deleteAllSettings();
+        });
+
+        $("#titleTextOpt").click(function () {
+            $("#textFormatSection").toggle();
+            $("#arrowTextOpt").toggleClass("up");
+        });
+
+        $("#titleSaveOpt").click(function () {
+            $("#saveSection").toggle();
+            $("#arrowSaveOpt").toggleClass("up");
+        });
+
+        $("#addConfig").click(function () {
+            addConfig();
+        });
+        $("#deleteConfig").click(function () {
+            deleteConfig();
+        });
+
+        $("#configsSelect").change(function () {
+            const configName = $(this).val();
+            applySettings(settingsMap[configName]);
+            $("#deleteConfig").text(
+                configName === "default" ? "clear" : "delete"
+            );
+        });
+
+        $("#headingsType").change(function () {
+            const headingsType = $(this).val();
+            const configName = $("#configsSelect").val();
+            applyTextFormatSettings(
+                settingsMap[configName].headingSettings[headingsType],
+                "heading"
+            );
+        });
+
+        google.script.run
+            .withSuccessHandler(loadSettings)
+            .withFailureHandler(showError)
+            .getAllSettings();
+
+        $("#loader").hide();
+    });
+
+    function countAll() {
+        $("#loader").show();
+        this.disabled = true;
+        $("#error").remove();
+        $("#outputCont").hide();
+        $("#foundResults").text(" ");
+        $("#notFoundResults").text(" ");
+        const keywords = $("#input-words").val();
+        const phrases = $("#input-phrases").val();
+
+        //settings fields
+        const ignoreCase = $("#ignore-case").is(":checked");
+        const ignoreWords = $("#ignore-found-words").is(":checked");
+        const ignorePhrases = $("#ignore-found-phrases").is(":checked");
+        const deleteEmptyRows = $("#deleteEmptyRows").is(":checked");
+        const highlightPhrases = $("#highlightPhrases").is(":checked");
+        const highlightWords = $("#highlightWords").is(":checked");
+
+        const wordsHighlightColor = $("#words_highlight_color").val();
+        const phrasesHighlightColor = $("#phrases_highlight_color").val();
+
+        if ($("#saveWords").is(":checked")) {
+            saveWords();
+        }
+
+        google.script.run
+            .withSuccessHandler(function (result, element) {
+                handleResult(result);
+                $("#loader").hide();
+                element.disabled = false;
+            })
+            .withFailureHandler(function (msg, element) {
+                showError(msg);
+                element.disabled = false;
+            })
+            .withUserObject(this)
+            .getAllCounts(
+                keywords,
+                phrases,
+                ignoreCase,
+                ignoreWords,
+                ignorePhrases,
+                deleteEmptyRows,
+                highlightWords ? wordsHighlightColor : null,
+                highlightPhrases ? phrasesHighlightColor : null
+            );
+    }
+
+    function handleResult(result) {
+        $("#outputCont").show();
+        $("#foundResults").text(result.found);
+        $("#notFoundResults").text(result.notFound);
+
+        $("#foundResults").toggle(!$("#onlyNotFound").is(":checked"));
+
+        if (result.hasNotFound) {
+            $("#statusStr").text("There are some troubles");
+            $("#statusStr").css("color", "red");
+        } else {
+            $("#statusStr").text("All perfectly!");
+            $("#statusStr").css("color", "green");
+        }
+    }
+
+    function loadSettings(settings) {
+        if (!settings || !settings.default) {
+            settings = {
+                default: JSON.stringify({
+                    ignoreCase: true,
+                    headingSettings: {},
+                    textSettings: {},
+                }),
+            };
+        }
+
+        for (let name in settings) {
+            settingsMap[name] = JSON.parse(settings[name]);
+            $("#configsSelect").append(
+                $("<option></option>").attr("value", name).text(name)
+            );
+        }
+        $("#configsSelect").val("default");
+        applySettings(settingsMap.default);
+    }
+
+    function exitWithoutSaving() {
+        const configName = $("#configsSelect").val();
+        applySettings(settingsMap[configName]);
+    }
+
+    function saveWords() {
+        const configName = $("#configsSelect").val();
+        const settingsObj = settingsMap[configName];
+        settingsObj.words = $("#input-words").val();
+        settingsObj.phrases = $("#input-phrases").val();
+
+        google.script.run
+            .withFailureHandler(showError)
+            .saveSettings(configName, JSON.stringify(settingsObj));
+    }
+
+    function applySettings(settingsObj = DEFAULT_SETTINGS_OBJ) {
+        const headingsType = $("#headingsType").val();
+        $("#ignore-case").prop("checked", !!settingsObj.ignoreCase);
+        $("#ignore-found-words").prop("checked", !!settingsObj.ignoreFound);
+        $("#ignore-found-phrases").prop(
+            "checked",
+            !!settingsObj.ignoreFoundPhrases
+        );
+        $("#onlyNotFound").prop("checked", !!settingsObj.onlyNotFound);
+        $("#deleteEmptyRows").prop("checked", !!settingsObj.deleteEmptyRows);
+        $("#saveWords").prop("checked", !!settingsObj.saveWords);
+        $("#highlightPhrases").prop("checked", !!settingsObj.highlightPhrases);
+        $("#highlightWords").prop("checked", !!settingsObj.highlightWords);
+        $("#words_highlight_color").val(
+            settingsObj.wordsHighlightColor || "#219dcd"
+        );
+        $("#phrases_highlight_color").val(
+            settingsObj.phrasesHighlightColor || "#f6b73c"
+        );
+
+        // applyTextFormatSettings(settingsObj.textSettings, "text");
+        $(`#textFont`).val(settingsObj.textSettings.font || "Arial");
+        $(`#textFontSize`).val(settingsObj.textSettings.fontSize || 12);
+        $("#pIndent").val(settingsObj.textSettings.pIndent || 1.15);
+        applyTextFormatSettings(
+            settingsObj.headingSettings[headingsType],
+            "heading"
+        );
+
+        if (settingsObj.saveWords) {
+            $("#input-words").val(settingsObj.words);
+            $("#input-phrases").val(settingsObj.phrases);
+        }
+    }
+
+    function applyTextFormatSettings(settingsObj = {}, prefix = "text") {
+        $(`#${prefix}Font`).val(settingsObj.font || "Arial");
+        $(`#${prefix}FontSize`).val(settingsObj.fontSize || 12);
+        $(`#${prefix}IsBold`).prop("checked", !!settingsObj.isBold);
+        $(`#${prefix}IsItalic`).prop("checked", !!settingsObj.isItalic);
+    }
+
+    function saveSettings() {
+        $("#loader").show();
+        const configName = $("#configsSelect").val();
+        const headingsType = $("#headingsType").val();
+        const settingsObj = {
+            ...settingsMap[configName],
+            ignoreCase: $("#ignore-case").is(":checked"),
+            ignoreFound: $("#ignore-found-words").is(":checked"),
+            ignoreFoundPhrases: $("#ignore-found-phrases").is(":checked"),
+            onlyNotFound: $("#onlyNotFound").is(":checked"),
+            deleteEmptyRows: $("#deleteEmptyRows").is(":checked"),
+            saveWords: $("#saveWords").is(":checked"),
+            highlightPhrases: $("#highlightPhrases").is(":checked"),
+            highlightWords: $("#highlightWords").is(":checked"),
+            wordsHighlightColor: $("#words_highlight_color").val(),
+            phrasesHighlightColor: $("#phrases_highlight_color").val(),
+            textSettings: {
+                font: $("#textFont").val(),
+                fontSize: $("#textFontSize").val(),
+                pIndent: $("#pIndent").val(),
+            },
+            headingSettings: {
+                ...settingsMap[configName].headingSettings,
+                [headingsType]: {
+                    font: $("#headingFont").val(),
+                    fontSize: $("#headingFontSize").val(),
+                    isBold: $("#headingIsBold").is(":checked"),
+                    isItalic: $("#headingIsItalic").is(":checked"),
+                },
+            },
+        };
+
+        if (!settingsObj.saveWords) {
+            settingsObj.words = "";
+            settingsObj.phrases = "";
+        }
+
+        settingsMap[configName] = settingsObj;
+
+        google.script.run
+            .withFailureHandler(showError)
+            .withSuccessHandler(saveSettingsHandler)
+            .saveSettings(configName, JSON.stringify(settingsMap[configName]));
+    }
+
+    function addConfig() {
+        const configName = $("#newConfigName").val();
+
+        if (!configName.trim()) return;
+
+        for (let name in settingsMap) {
+            if (configName === name) return;
+        }
+
+        $("#configsSelect").append(
+            $("<option></option>").attr("value", configName).text(configName)
+        );
+        $("#configsSelect").val(configName);
+        $("#newConfigName").val("");
+        $("#deleteConfig").text("delete");
+        settingsMap[configName] = DEFAULT_SETTINGS_OBJ;
+        applySettings();
+        saveSettings();
+    }
+
+    function deleteAllSettings() {
+        settingsMap = {};
+        google.script.run.withFailureHandler(showError).deleteAllSettings();
+        loadSettings();
+    }
+
+    function deleteConfig() {
+        const configName = $("#configsSelect").val();
+        if (configName === "default") {
+            settingsMap.default = DEFAULT_SETTINGS_OBJ;
+            applySettings(settingsMap.default);
+        } else {
+            $("#configsSelect").find("option:selected").remove();
+            $("#configsSelect").val("default");
+            applySettings(settingsMap.default);
+            $("#deleteConfig").text("clear");
+            google.script.run
+                .withFailureHandler(showError)
+                .deleteSettings(configName);
+        }
+    }
+
+    function formatText() {
+        $("#loader").show();
+        const font = $("#textFont").val();
+        const fontSize = $("#textFontSize").val();
+        const pIndent = $("#pIndent").val();
+
+        google.script.run
+            .withSuccessHandler(successHanlder)
+            .withFailureHandler(showError)
+            .setTextStyle(font, fontSize, pIndent);
+    }
+
+    function formatHeadings() {
+        $("#loader").show();
+        const font = $("#headingFont").val();
+        const fontSize = $("#headingFontSize").val();
+        const isBold = $("#headingIsBold").is(":checked");
+        const isItalic = $("#headingIsItalic").is(":checked");
+        const headingsType = $("#headingsType").val();
+
+        google.script.run
+            .withSuccessHandler(successHanlder)
+            .withFailureHandler(showError)
+            .setHeadingsStyle(headingsType, font, fontSize, isBold, isItalic);
+    }
+
+    /**
+     * Inserts a div that contains an error message after a given element.
+     *
+     * @param {string} msg The error message to display.
+     * @param {DOMElement} element The element after which to display the error.
+     */
+
+    function successHanlder() {
+        $("#loader").hide();
+    }
+
+    function saveSettingsHandler() {
+        $("#loader").hide();
+        const configName = $("#configsSelect").val();
+        const saveStatusText = $("#saveStatusText");
+        saveStatusText.text(`Config ${configName} saved!`);
+        saveStatusText.show();
+        setTimeout(() => saveStatusText.hide(), 3000);
+    }
+
+    function showError(msg, element) {
+        $("#loader").hide();
+        const div = $('<div id="error" class="error">ServerError</div>');
+        $("#outputCont").after(div);
+        // element ? $(element).after(div) : $(".container").after(div);
+    }
+</script>
