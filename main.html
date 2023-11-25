@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link
+            rel="stylesheet"
+            href="https://ssl.gstatic.com/docs/script/css/add-ons1.css"
+        />
+        <base target="_top" />
+        <?!= include('css'); ?>
+    </head>
+    <body>
+        <main class="container">
+            <div class="loader" id="loader"></div>
+            <button id="settings-btn">Settings</button>
+            <div id="saveStatusText" class="save-status-text"></div>
+            <div id="settings" style="display: none" class="settings-dialog">
+                <!--        SEARCH-->
+                <b>Search options</b>
+                <div>
+                    <input type="checkbox" id="ignore-case" checked />
+                    <label for="ignore-case">Ignore case</label>
+                    <br />
+                    <input type="checkbox" id="ignore-found-words" />
+                    <label for="ignore-found-words"
+                        >Ignore words in found phrases</label
+                    >
+                    <br />
+                    <input type="checkbox" id="ignore-found-phrases" />
+                    <label for="ignore-found-phrases"
+                        >Ignore sub-phrases in found phrases</label
+                    >
+                    <br />
+                    <input type="checkbox" id="onlyNotFound" />
+                    <label for="onlyNotFound">Show only not found</label>
+                    <br />
+                    <input type="checkbox" id="deleteEmptyRows" />
+                    <label for="deleteEmptyRows" class="long-label"
+                        >Delete empty rows and extra spaces</label
+                    >
+                    <br />
+                    <input type="checkbox" id="highlightPhrases" />
+                    <label for="highlightPhrases">Highlight phrases</label>
+                    <br />
+                    <input type="checkbox" id="highlightWords" />
+                    <label for="highlightWords">Highlight words</label>
+                    <br />
+                    <input
+                        type="color"
+                        style="margin-top: 1rem"
+                        id="phrases_highlight_color"
+                        value="#219dcd"
+                    />
+                    <label for="phrases_highlight_color"
+                        >Phrases highlight color
+                    </label>
+                    <br />
+                    <input
+                        type="color"
+                        id="words_highlight_color"
+                        value="#f6b73c"
+                    />
+                    <label for="words_highlight_color"
+                        >Words highlight color
+                    </label>
+                    <hr />
+                </div>
+                <!--        TEXT-->
+                <div style="cursor: pointer" id="titleTextOpt">
+                    <b>Text format options</b>
+                    <i id="arrowTextOpt" class="arrow"></i>
+                </div>
+                <div id="textFormatSection" style="display: none">
+                    Normal text:
+                    <div class="fonts-configs-row">
+                        <label for="textFont">Font</label>
+                        <select id="textFont">
+                            <option selected>Arial</option>
+                            <option>Calibri</option>
+                            <option>Times New Roman</option>
+                            <option>Roboto</option>
+                            <option>Open Sans</option>
+                            <option>Lato</option>
+                            <option>Slabo</option>
+                            <option>Oswald</option>
+                            <option>Source Sans Pro</option>
+                            <option>Montserrat</option>
+                            <option>Raleway</option>
+                            <option>PT Sans</option>
+                            <option>Lora</option>
+                            <option>Noto Sans</option>
+                            <option>Nunito Sans</option>
+                            <option>Concert One</option>
+                            <option>Prompt</option>
+                            <option>Work Sans</option>
+                        </select>
+                    </div>
+                    <div class="fonts-configs-row">
+                        <label for="textFontSize">Font-size</label>
+                        <input id="textFontSize" type="number" value="12" />
+                    </div>
+                    <div class="configs-row mt-12">
+                        <label for="pIndent">Paragraph indent</label>
+                        <input type="number" id="pIndent" value="1.15" />
+                    </div>
+                    <button id="formatTextBtn" class="mt-12">
+                        Format text
+                    </button>
+                    Sub-headings:
+                    <br />
+                    <div class="fonts-configs-row">
+                        <label for="headingsType">Apply for:</label>
+                        <select id="headingsType">
+                            <option selected>HEADING2</option>
+                            <option>HEADING3</option>
+                        </select>
+                    </div>
+                    <div class="fonts-configs-row">
+                        <label for="headingFont">Font</label>
+                        <select id="headingFont">
+                            <option selected>Arial</option>
+                            <option>Calibri</option>
+                            <option>Times New Roman</option>
+                            <option>Roboto</option>
+                            <option>Open Sans</option>
+                            <option>Lato</option>
+                            <option>Slabo</option>
+                            <option>Oswald</option>
+                            <option>Source Sans Pro</option>
+                            <option>Montserrat</option>
+                            <option>Raleway</option>
+                            <option>PT Sans</option>
+                            <option>Lora</option>
+                            <option>Noto Sans</option>
+                            <option>Nunito Sans</option>
+                            <option>Concert One</option>
+                            <option>Prompt</option>
+                            <option>Work Sans</option>
+                        </select>
+                    </div>
+                    <div class="fonts-configs-row">
+                        <label for="headingFontSize">Font-size</label>
+                        <input id="headingFontSize" type="number" value="12" />
+                    </div>
+                    <div class="mt-12">
+                        <input type="checkbox" id="headingIsBold" />
+                        <label for="headingIsBold">Bold</label>
+                        <input type="checkbox" id="headingIsItalic" />
+                        <label for="headingIsItalic">Italic</label>
+                    </div>
+
+                    <button id="formatHeadingsBtn" class="mt-12">
+                        Format sub-headings
+                    </button>
+                    <hr />
+                </div>
+                <!--        SAVE-->
+
+                <div style="cursor: pointer" id="titleSaveOpt">
+                    <b>Save options</b> <i id="arrowSaveOpt" class="arrow"></i>
+                </div>
+                <div id="saveSection" style="display: none">
+                    Select config:
+                    <div class="configs-row">
+                        <select id="configsSelect"></select>
+                        <button id="deleteConfig">Clear</button>
+                    </div>
+                    Or add new:
+                    <div class="configs-row">
+                        <input
+                            type="text"
+                            placeholder="Config name"
+                            id="newConfigName"
+                        />
+                        <button id="addConfig" class="create">Add</button>
+                    </div>
+
+                    <input type="checkbox" id="saveWords" />
+                    <label for="saveWords">Save words and phrases</label>
+                    <br />
+
+                    <button id="deleteAllSettings" class="mt-12">
+                        Delete all
+                    </button>
+                </div>
+                <button
+                    id="saveSettings"
+                    class="action"
+                    style="margin-top: 8px"
+                >
+                    Save settings
+                </button>
+            </div>
+
+            <form>
+                <div class="input-cont">
+                    <label for="input-words"><b>Input words</b></label>
+                    <textarea id="input-words" rows="5"></textarea>
+
+                    <label for="input-phrases"><b>Input phrases</b></label>
+                    <textarea id="input-phrases" rows="5"></textarea>
+                </div>
+
+                <button id="run" class="action">Count</button>
+            </form>
+
+            <div class="output-cont" id="outputCont">
+                <b>Output</b>
+                <div id="statusStr"></div>
+                <br />
+                <div id="foundResults" class="results-block"></div>
+                <div id="notFoundResults" class="results-block"></div>
+            </div>
+        </main>
+
+        <?!= include('JS') ?>
+    </body>
+</html>
