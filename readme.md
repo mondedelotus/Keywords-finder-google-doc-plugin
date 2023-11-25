@@ -4,7 +4,7 @@
 
 ## Overview
 
-![screenshot](https://github.com/mondedelotus/Keywords-finder-google-doc-plugin/blob/master/overview.webp)
+![screenshot](https://github.com/mondedelotus/Keywords-finder-google-doc-plugin/blob/main/overview.webp)
 
 ### Built With
 
